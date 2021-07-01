@@ -1,0 +1,1 @@
+tokes = [:EOF, :INT, :ADD, :MINUS, :STAR, :SLASH]
