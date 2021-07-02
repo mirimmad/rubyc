@@ -1,4 +1,4 @@
-tokes = [:EOF, :INT, :PLUS, :MINUS, :STAR, :SLASH]
+#tokes = [:EOF, :INT, :PLUS, :MINUS, :STAR, :SLASH]
 
 
 class Token
@@ -39,6 +39,17 @@ class Scanner
     when '*'
       addToken(:STAR)
     when '/'
+      addToken(:SLASH)
+    when " " || "\t" || "\r" || "\f"
+    when "\n"
+      @line += 1
+    else
+      if isDigit(c)
+        number()
+      else
+        error(@line, "unexpected character #{c.ord}")
+      end
+
     end
 
   end
@@ -53,8 +64,34 @@ class Scanner
     c
   end
 
+  def peek
+    if isAtEnd
+      return '\0'
+    end
+    @source[@current]
+  end
+
+  def isDigit(c)
+    code = c.ord
+    48 <= code && code <= 57
+  end
+
+  def number
+    start = @current - 1
+    while isDigit(peek)
+      advance
+    end
+    
+    addToken(:NUMBER, @source[start..@current-1])
+  end
+
   def addToken(type, literal=nil)
     @tokens.push Token.new(type,literal,@line)
+  end
+
+  def error(line, message)
+    puts "Line #{line}: #{message}"
+    exit(1)
   end
 
 end
