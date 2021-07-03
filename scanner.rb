@@ -47,7 +47,7 @@ class Scanner
       if isDigit(c)
         number()
       else
-        error(@line, "unexpected character #{c.ord}")
+        error(@line, "unexpected character #{c}")
       end
 
     end
