@@ -1,16 +1,22 @@
 require_relative "scanner.rb"
 require_relative "parser.rb"
+require_relative "gen.rb"
+
 
 s = """2 + 3 * 5 - 8 /
 3"""
 ss = Scanner.new(s)
-ss.scanTokens.each do |x|
-  puts x
-end
+#ss.scanTokens.each do |x|
+ # puts x
+#end
 
 
 p = Parser.new(ss.scanTokens)
 puts x = p.parse
+
+g = Gen.new(x)
+g.genCode
+
 
 
 def interpreter(node)
