@@ -1,5 +1,9 @@
 #tokes = [:EOF, :INT, :PLUS, :MINUS, :STAR, :SLASH]
 
+$keywords = {
+  "print" => :PRINT
+}
+
 
 class Token
   attr_reader :type, :literal, :line
@@ -10,6 +14,9 @@ class Token
   end
   def to_s
     "#{type} #{literal} #{line}"
+  end
+  def inspect 
+    to_s
   end
 end
 
@@ -40,12 +47,16 @@ class Scanner
       addToken(:STAR)
     when '/'
       addToken(:SLASH)
+    when ';'
+      addToken(:SEMI)
     when " " || "\t" || "\r" || "\f"
     when "\n"
       @line += 1
     else
       if isDigit(c)
         number()
+      elsif isAlpha(c)
+        identifier()
       else
         error(@line, "unexpected character #{c}")
       end
@@ -76,6 +87,15 @@ class Scanner
     48 <= code && code <= 57
   end
 
+  def isAlpha(c)
+    code = c.ord
+    (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code == 95
+  end
+
+  def isAlphaNumeric(c)
+    isAlpha(c) || isDigit(c)
+  end
+
   def number
     start = @current - 1
     while isDigit(peek)
@@ -84,7 +104,19 @@ class Scanner
     
     addToken(:NUMBER, @source[start..@current-1])
   end
-
+  
+  def identifier
+    start = @current - 1
+    while isAlphaNumeric(peek)
+      advance
+    end
+    literal = @source[start..@current-1]
+    if $keywords[literal] != nil
+      addToken($keywords[literal], literal)
+    else
+    addToken(:IDENTIFIER, literal)
+    end
+  end
   def addToken(type, literal=nil)
     @tokens.push Token.new(type,literal,@line)
   end
