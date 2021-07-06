@@ -3,8 +3,7 @@ require_relative "parser.rb"
 require_relative "gen.rb"
 
 
-s = """2 + 3 * 5 - 8 /
-3"""
+s = "print 1+1; print 2*2;"
 ss = Scanner.new(s)
 #ss.scanTokens.each do |x|
  # puts x

@@ -4,7 +4,8 @@ end
 class Expression < Node
 end
 
-
+class Statement < Node
+end
 
 class IntLit < Expression
   attr_reader :value
@@ -29,4 +30,34 @@ class Binary < Expression
     "[#{@a_type} #{@left.to_s} #{@right.to_s}]"
   end
 
+end
+
+class Statements < Statement
+  attr_reader :stmts
+  def initialize(stmts)
+    @stmts = stmts
+  end
+  def to_s
+    for s in stmts
+      puts s.to_s
+    end
+    ""
+  end
+  def inspect
+    to_s
+  end
+end
+
+class PrintStmt < Statement
+  attr_reader :expr
+  def initialize(expr)
+    @expr = expr
+  end
+
+  def to_s
+    "PRINT: " + @expr.to_s
+  end
+  def inspect
+    to_s
+  end
 end

@@ -117,6 +117,7 @@ class Scanner
     addToken(:IDENTIFIER, literal)
     end
   end
+  
   def addToken(type, literal=nil)
     @tokens.push Token.new(type,literal,@line)
   end

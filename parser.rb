@@ -19,8 +19,28 @@ class Parser
 
   def parse 
     advance
-    binexp(0)
+    statements
   end
+
+  def statements
+    list = []
+    while 1
+      list.push printStatement
+      if @token.type == :EOF
+        return Statements.new(list)
+      end
+    end
+
+  end
+
+  def printStatement
+      match(:PRINT, "print")
+      tree = binexp(0)
+      match(:SEMI, ";")
+      PrintStmt.new(tree)
+  end
+
+
 
   def primary
 
@@ -38,7 +58,7 @@ class Parser
 
     left = primary()
     token_= @token
-    if token_.type == :EOF
+    if token_.type == :SEMI
       return left
     end
 
@@ -49,17 +69,13 @@ class Parser
       left = Binary.new(token_.type, left, right)
 
       token_= @token
-      if (token_.type == :EOF)
+      if (token_.type == :SEMI)
         return left
       end
     end
 
     return left
   end
-
-
-
-
 
 
   def advance
@@ -81,6 +97,22 @@ class Parser
     @tokens[@current-1]
   end
 
+  def check(type)
+    if isAtEnd
+      return false
+    end
+    peek.type == type
+  end
+
+  def match(type, what)
+    if(@token.type == type)
+      advance
+      return true
+    else
+      error(previous.line, "excpected #{what}", nil)
+    end
+  end
+
   def op_prec(token)
     #puts "prec of #{token.type}"
     prec = $opOprec[token.type]
@@ -91,11 +123,8 @@ class Parser
   end
 
   def error(line, message, type)
-    puts "Line #{line}: #{message}, token #{type}"
+    puts "Line #{line}: #{message} " + if type then ",token #{type}" else "" end
     exit(1)
   end
-
-
-
 
 end

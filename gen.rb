@@ -15,8 +15,7 @@ class Gen
   #The kernel function
   def genCode()
     @cg.cgpreamble
-    reg = gen(@node)
-    @cg.cgprintint(reg)
+    gen(@node)
     @cg.cgpostamble
   end
 
@@ -27,9 +26,16 @@ class Gen
       @cg.cgload(node.value.to_i)
     when Binary
       binary(node)
+    when Statements
+      for stmt in node.stmts
+        gen(stmt)
+      end
+    when PrintStmt
+      printStmt(node)
     end
   end
-
+  
+  
   #For handling binary AST
   def binary(node)
     if node.left
@@ -53,6 +59,12 @@ class Gen
       puts "unknown AST op #{node.a_type}"
       exit(1)
     end
+  end
+
+  def printStmt(node)
+    reg = gen(node.expr)
+    @cg.cgprintint(reg)
+    @cg.freeall_registers()
   end
 
 
