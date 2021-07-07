@@ -1,7 +1,8 @@
 #tokes = [:EOF, :INT, :PLUS, :MINUS, :STAR, :SLASH]
 
 $keywords = {
-  "print" => :PRINT
+  "print" => :PRINT,
+  "int" => :INT
 }
 
 
@@ -49,6 +50,8 @@ class Scanner
       addToken(:SLASH)
     when ';'
       addToken(:SEMI)
+    when '='
+      addToken(:EQUALS)
     when " " || "\t" || "\r" || "\f"
     when "\n"
       @line += 1
@@ -114,7 +117,7 @@ class Scanner
     if $keywords[literal] != nil
       addToken($keywords[literal], literal)
     else
-    addToken(:IDENTIFIER, literal)
+    addToken(:IDENT, literal)
     end
   end
   

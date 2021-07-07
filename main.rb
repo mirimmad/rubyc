@@ -3,7 +3,7 @@ require_relative "parser.rb"
 require_relative "gen.rb"
 
 
-s = "print 1+1; print 2*2;"
+s = File.read("input02.txt")
 ss = Scanner.new(s)
 #ss.scanTokens.each do |x|
  # puts x
@@ -13,30 +13,19 @@ ss = Scanner.new(s)
 p = Parser.new(ss.scanTokens)
 puts x = p.parse
 
-g = Gen.new(x)
+output = nil
+begin
+  output = File.open("out.s", "w")
+rescue Exception
+  puts "failed to open file"
+  exit(1)
+end
+
+g = Gen.new(x, output)
 g.genCode
 
 
 
-def interpreter(node)
-  case node
-  when IntLit
-    node.value.to_i
-  when Binary
-    left = interpreter(node.left)
-    right = interpreter(node.right)
-    op = node.a_type
-    case op
-    when :PLUS
-      left + right
-    when :MINUS
-      left - right
-    when :STAR
-      left * right
-    when :SLASH
-      left / right
-    end
-  end
-end
+
 #puts x.right.a_type
 #puts interpreter(x)

@@ -32,6 +32,36 @@ class Binary < Expression
 
 end
 
+class Ident < Expression
+  attr_reader :name, :id
+  def initialize(name, id)
+    @name = name
+    @id = id
+  end
+
+  def to_s
+    "Ident #{@name}(#{@id})"
+  end
+  def inspect
+    to_s
+  end
+end
+
+class LVIdent < Expression
+  attr_reader :name, :id
+  def initialize(name, id)
+    @name = name
+    @id = id
+  end
+
+  def to_s
+    "LVIdent #{@name}(#{@id})"
+  end
+  def inspect
+    to_s
+  end
+end
+
 class Statements < Statement
   attr_reader :stmts
   def initialize(stmts)
@@ -56,6 +86,39 @@ class PrintStmt < Statement
 
   def to_s
     "PRINT: " + @expr.to_s
+  end
+  def inspect
+    to_s
+  end
+end
+
+class VarDecl < Statement
+  attr_reader :ident, :id
+  
+  def initialize(ident, id)
+    @ident = ident
+    @id = id
+  end
+
+  def to_s
+    "Var: #{@ident}"
+  end
+
+  def inspect
+    to_s
+  end
+end
+
+class AssignmentStmt < Statement
+  attr_reader :left, :right
+  
+  def initialize(left, right)
+    @left = left
+    @right = right
+  end
+
+  def to_s
+    "Assign: #{@left.to_s} = #{@right.to_s}"
   end
   def inspect
     to_s

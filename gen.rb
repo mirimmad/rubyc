@@ -1,14 +1,8 @@
 require_relative "cg.rb"
 
 class Gen
-  def initialize(node)
+  def initialize(node, output)
     @node = node
-    begin
-      output = File.open("out.s", "w")
-    rescue Exception
-      puts "Failed to open output file"
-      exit(1)
-    end
     @cg = Cg.new(output)
   end
 

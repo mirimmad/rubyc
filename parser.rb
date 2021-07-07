@@ -1,5 +1,6 @@
 
 require_relative "ast.rb"
+require_relative "sym.rb"
 
 $opOprec = {
   :EOF => 0,
@@ -15,6 +16,7 @@ class Parser
     @tokens = tokens
     @current = 0
     @token = nil
+    @sym = GlobalSymTab.new
   end
 
   def parse 
@@ -25,33 +27,74 @@ class Parser
   def statements
     list = []
     while 1
-      list.push printStatement
-      if @token.type == :EOF
-        return Statements.new(list)
+      case @token.type
+      when :PRINT
+        list.push printStmt
+      when :INT
+        list.push varDecl
+      when :IDENT
+        list.push assignmentStmt
+      when :EOF
+        break
+      else
+        error(@token.line, "Syntax error", @token.type)
       end
     end
-
+    Statements.new list
   end
 
-  def printStatement
+
+  def varDecl
+    match(:INT, "int")
+    check(:IDENT)
+    id = @sym.addglob(@token.literal)
+    ident = @token.literal
+    advance
+    match(:SEMI, ";")
+    VarDecl.new(ident, id)
+  end
+
+  def assignmentStmt
+    check(:IDENT)
+    if((id = @sym.findglob(@token.literal)) == -1)
+      error(@token.line, "Undeclared variable", @token.literal)
+    end
+    advance
+    right = LVIdent.new(@token.literal, id)
+    match(:EQUALS, "=")
+
+    left = binexp(0)
+    t = AssignmentStmt.new(left, right)
+    match(:SEMI, ";")
+    t
+  end
+
+
+  def printStmt
       match(:PRINT, "print")
       tree = binexp(0)
       match(:SEMI, ";")
       PrintStmt.new(tree)
   end
 
-
+  
 
   def primary
-
+    n = nil
     case @token.type
     when :NUMBER
       n = IntLit.new(@token.literal)
-      advance
-      n
+    when :IDENT
+      id = @sym.findglob(@token.literal)
+      if(id == -1)
+        error(@token.line, "Unknown variable", @token.type)
+      end
+      n = Ident.new(@token.literal, id)
     else
       error(@token.line, "syntax error", @token.type)
     end
+    advance
+    n
   end
 
   def binexp(prec)
