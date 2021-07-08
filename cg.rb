@@ -112,4 +112,22 @@ class Cg
     free_register(r)
   end
 
+  def cgloadglob(identifier)
+    r = allocate_register()
+    code =  "\tmovq\t#{identifier}(%rip), #{@reglist[r]}\n"
+    @output.puts code
+    r
+  end
+
+  def cgstoreglob(r, identifier)
+    code = "\tmovq\t#{@reglist[r]}, #{identifier}(%rip)\n"
+    @output.puts code
+    r
+  end
+
+  def cgglobsym(smy)
+    code = "\t.comm\t#{sym},8,8\n"
+    @output.puts code
+  end
+
 end
