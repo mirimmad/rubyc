@@ -2,6 +2,7 @@ $NSYMBOLS = 1024
 
 
 class GlobalSymTab
+    attr_reader :names
     def initialize
         @globs = 0
         @names = {}

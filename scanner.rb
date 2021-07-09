@@ -52,8 +52,11 @@ class Scanner
       addToken(:SEMI)
     when '='
       addToken(:EQUALS)
-    when " " || "\t" || "\r" || "\f"
-    when "\n"
+    when " "
+    when "\r"
+    when "\t"
+    when "\f"
+    when "\n" 
       @line += 1
     else
       if isDigit(c)
@@ -61,7 +64,7 @@ class Scanner
       elsif isAlpha(c)
         identifier()
       else
-        error(@line, "unexpected character #{c}")
+        error(@line, "unexpected character #{c.ord}")
       end
 
     end

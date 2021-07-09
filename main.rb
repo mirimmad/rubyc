@@ -1,7 +1,7 @@
 require_relative "scanner.rb"
 require_relative "parser.rb"
 require_relative "gen.rb"
-
+require_relative "sym.rb"
 
 s = File.read("input02.txt")
 ss = Scanner.new(s)
@@ -9,8 +9,8 @@ ss = Scanner.new(s)
  # puts x
 #end
 
-
-p = Parser.new(ss.scanTokens)
+sym = GlobalSymTab.new
+p = Parser.new(ss.scanTokens, sym)
 puts x = p.parse
 
 output = nil
@@ -21,7 +21,7 @@ rescue Exception
   exit(1)
 end
 
-g = Gen.new(x, output)
+g = Gen.new(x, output, sym)
 g.genCode
 
 

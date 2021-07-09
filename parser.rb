@@ -12,11 +12,11 @@ $opOprec = {
 }
 
 class Parser
-  def initialize(tokens)
+  def initialize(tokens, sym)
     @tokens = tokens
     @current = 0
     @token = nil
-    @sym = GlobalSymTab.new
+    @sym = sym
   end
 
   def parse 
@@ -87,7 +87,7 @@ class Parser
     when :IDENT
       id = @sym.findglob(@token.literal)
       if(id == -1)
-        error(@token.line, "Unknown variable", @token.type)
+        error(@token.line, "Unknown variable '#{@token.literal}'", @token.type)
       end
       n = Ident.new(@token.literal, id)
     else
@@ -166,7 +166,7 @@ class Parser
   end
 
   def error(line, message, type)
-    puts "Line #{line}: #{message} " + if type then ",token #{type}" else "" end
+    puts "Line #{line}: #{message}" + if type then ",token #{type}" else "" end
     exit(1)
   end
 

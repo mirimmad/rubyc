@@ -125,7 +125,7 @@ class Cg
     r
   end
 
-  def cgglobsym(smy)
+  def cgglobsym(sym)
     code = "\t.comm\t#{sym},8,8\n"
     @output.puts code
   end
