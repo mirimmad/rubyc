@@ -131,13 +131,42 @@ class Cg
     @output.puts code
   end
 
-  def cgcompare(r1, r2, how)
+  def cgcompare_and_set(op, r1, r2)
+    if not [:EQ_EQ, :NE, :LT, :LE, :GT, :GE].include? op
+      fatal("bad comparision op")
+    end
+    cmplist = {:EQ_EQ => "sete", :NE => "setne", :LT => "setl", :GT => "setg", :LE => "setle", :GE => "setge"}
     code = "\tcmpq\t#{@reglist[r2]}, #{@reglist[r1]}\n"
-    code += "\t#{how}\t#{@breglist[r2]}\n"
-    code += "\tandq\t$255, #{@reglist[r2]}\n"
+    code += "\t#{cmplist[op]}\t#{@breglist[r2]}\n"
+    code += "\tmovzbq\t#{@breglist[r2]}, #{@reglist[r2]}"
     @output.puts code
     free_register(r1)
     r2
   end
 
+  def cglabel(l)
+    @output.puts "L#{l}:\n"
+  end
+
+  def cgjmp(l)
+    @output.puts "\tjmp\tL#{l}\n"
+  end
+
+  def cgcompare_and_jump(op, r1, r2, label)
+    if not [:EQ_EQ, :NE, :LT, :LE, :GT, :GE].include? op
+      fatal("bad comparision op")
+    end
+    invcmplist = {:EQ_EQ => "jne", :NE => "je", :LT => "jge", :GT => "jle", :LE => "jg", :GE => "jl"}
+    
+    code = "\tcmpq\t#{@reglist[r2]}, #{@reglist[r1]}\n"
+    code += "\t#{invcmplist[op]}\tL#{label}\n"
+    @output.puts code
+    freeall_registers()
+    -1
+  end
+
+  def fatal(message)
+    puts "CG: message"
+    exit(1)
+  end
 end

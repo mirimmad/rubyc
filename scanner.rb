@@ -68,10 +68,7 @@ class Scanner
       addToken(if match('=') then :GE else :GT end)
     when '<'
       addToken(if match('=') then :LE else :LT end)
-    when " "
-    when "\r"
-    when "\t"
-    when "\f"
+    when " ", "\r", "\t", "\f"
     when "\n" 
       @line += 1
     else

@@ -146,6 +146,7 @@ class AssignmentStmt < Statement
 end
 
 class IfStmt < Statement
+  attr_reader :cond, :thenBranch, :elseBranch
   def initialize(cond, thenBranch, elseBranch)
     @cond = cond
     @thenBranch = thenBranch

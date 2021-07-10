@@ -5,6 +5,7 @@ class Gen
     @node = node
     @cg = Cg.new(output)
     @sym = sym
+    @nlabel = 0
   end
 
   #The kernel function
@@ -20,7 +21,7 @@ class Gen
     when IntLit
       @cg.cgload(node.value.to_i)
     when Binary
-      binary(node)
+      binary(node, false, -1)
     when Ident
       Ident(node)
     when LVIdent
@@ -40,14 +41,15 @@ class Gen
     when AssignmentStmt
       assignmentStmt(node)
     when IfStmt
-      puts "an if stmt"
+      ifStmt(node)
     end
 
   end
   
   
   #For handling binary AST
-  def binary(node)
+  def binary(node, iff, label)
+    #iff = true if `binary` was called to evaluate the condition clause of an if statement
     if node.left
       leftreg = gen(node.left, -1)
     end
@@ -65,18 +67,12 @@ class Gen
       @cg.cgmul(leftreg, rightreg)
     when :SLASH
       @cg.cgdiv(leftreg, rightreg)
-    when :EQ_EQ
-      @cg.cgcompare(leftreg, rightreg, "sete")
-    when :NE
-      @cg.cgcompare(leftreg, rightreg, "setne")
-    when :LT
-      @cg.cgcompare(leftreg, rightreg, "setl")
-    when :LE
-      @cg.cgcompare(leftreg, rightreg, "setle")
-    when :GT
-      @cg.cgcompare(leftreg, rightreg, "setg")
-    when :GE
-      @cg.cgcompare(leftreg, rightreg, "setge")
+    when :EQ_EQ, :NE, :LT, :GT, :GE, :LE
+      if not iff
+        @cg.cgcompare_and_set(node.a_type, leftreg, rightreg)
+      else
+        @cg.cgcompare_and_jump(node.a_type, leftreg, rightreg, label)
+      end
     else
       puts "unknown AST op #{node.a_type}"
       exit(1)
@@ -106,10 +102,39 @@ class Gen
     #left is the exprssion which will "compile" into register that stores the result
     leftreg = gen(node.left, -1)
     rightreg = gen(node.right, leftreg)
+    @cg.free_register(leftreg)
     rightreg
   end
 
+  def label
+    @nlabel = @nlabel + 1
+  end
+
   def ifStmt(node)
+    lfalse = label
+    lend = nil
+    if(node.elseBranch != nil)
+      lend = label
+    end
+    binary(node.cond, true, lfalse)
+    @cg.freeall_registers
+
+    gen(node.thenBranch, -1)
+
+    @cg.freeall_registers
+
+    if(node.elseBranch != nil)
+      @cg.cgjmp(lend)
+    end
+
+    @cg.cglabel(lfalse)
+
+    if(node.elseBranch != nil)
+      gen(node.elseBranch, -1)
+      @cg.freeall_registers
+      @cg.cglabel(lend)
+    end
+    -1
   end
 
 end

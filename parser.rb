@@ -42,6 +42,7 @@ class Parser
       when :IF
         list.push ifStmt
       when :RBRACE
+        match(:RBRACE, "}")
         break
       else
         error(@token.line, "Syntax error", @token.type)
@@ -92,6 +93,8 @@ class Parser
     if(@token.type == :ELSE)
       advance
       elseBranch = compoundStatement
+    else
+      puts "no else branch"
     end
 
     IfStmt.new(cond, thenBranch, elseBranch)
