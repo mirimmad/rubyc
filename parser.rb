@@ -3,12 +3,16 @@ require_relative "ast.rb"
 require_relative "sym.rb"
 
 $opOprec = {
-  :EOF => 0,
-  :PLUS => 10,
-  :MINUS => 10,
-  :STAR => 20,
-  :SLASH => 20,
-  :NUMBER => 0
+  :SLASH => 7,
+  :STAR => 7,
+  :PLUS => 6,
+  :MINUS => 6,
+  :GT => 4,
+  :GE => 4,
+  :LT => 4,
+  :LE => 4,
+  :EQ_EQ => 3,
+  :NE => 3
 }
 
 class Parser
@@ -21,11 +25,12 @@ class Parser
 
   def parse 
     advance
-    statements
+    compoundStatement
   end
 
-  def statements
+  def compoundStatement
     list = []
+    match(:LBRACE, "{")
     while 1
       case @token.type
       when :PRINT
@@ -34,13 +39,15 @@ class Parser
         list.push varDecl
       when :IDENT
         list.push assignmentStmt
-      when :EOF
+      when :IF
+        list.push ifStmt
+      when :RBRACE
         break
       else
         error(@token.line, "Syntax error", @token.type)
       end
     end
-    Statements.new list
+    Compoundstatement.new list
   end
 
 
@@ -67,6 +74,28 @@ class Parser
     t = AssignmentStmt.new(left, right)
     match(:SEMI, ";")
     t
+  end
+
+  def ifStmt
+    match(:IF, "if")
+    match(:LPAREN, "(")
+
+    cond = binexp(0)
+    if not [:EQ_EQ, :NE, :LT, :LE, :GT, :GE].include? cond.a_type
+      fatal("bad comparision operator.")
+    end
+
+    match(:RPAREN, ")")
+
+    thenBranch = compoundStatement
+    elseBranch = nil
+    if(@token.type == :ELSE)
+      advance
+      elseBranch = compoundStatement
+    end
+
+    IfStmt.new(cond, thenBranch, elseBranch)
+
   end
 
 
@@ -101,7 +130,7 @@ class Parser
 
     left = primary()
     token_= @token
-    if token_.type == :SEMI
+    if token_.type == :SEMI || token_.type == :RPAREN
       return left
     end
 
@@ -112,7 +141,7 @@ class Parser
       left = Binary.new(token_.type, left, right)
 
       token_= @token
-      if (token_.type == :SEMI)
+      if (token_.type == :SEMI || token_.type == :RPAREN)
         return left
       end
     end
@@ -141,10 +170,11 @@ class Parser
   end
 
   def check(type)
-    if isAtEnd
-      return false
+    if(@token.type == type)
+      return true
+    else
+      error(previous.line, "excpected #{what}", nil)
     end
-    peek.type == type
   end
 
   def match(type, what)
@@ -167,6 +197,11 @@ class Parser
 
   def error(line, message, type)
     puts "Line #{line}: #{message}" + if type then ",token #{type}" else "" end
+    exit(1)
+  end
+
+  def fatal(message)
+    puts message
     exit(1)
   end
 

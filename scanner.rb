@@ -1,8 +1,10 @@
-#tokes = [:EOF, :INT, :PLUS, :MINUS, :STAR, :SLASH]
+#tokens = [:EOF, :INT(type), :PLUS, :MINUS, :STAR, :SLASH, :EQ_EQ, :EQUALS, :NE, :LT, :LE, :GT, :GE, :SEMI, :PRINT, :IDENT, :NNUMBER, :LBRACE, :RBRACE, :IF, :ELSE]
 
 $keywords = {
   "print" => :PRINT,
-  "int" => :INT
+  "int" => :INT,
+  "if" => :IF,
+  "else" => :ELSE
 }
 
 
@@ -50,8 +52,22 @@ class Scanner
       addToken(:SLASH)
     when ';'
       addToken(:SEMI)
+    when '{'
+      addToken(:LBRACE)
+    when '}'
+      addToken(:RBRACE)
+    when '('
+      addToken(:LPAREN)
+    when ')'
+      addToken(:RPAREN)
     when '='
-      addToken(:EQUALS)
+      addToken(if match('=') then :EQ_EQ else :EQUALS end)
+    when '!'
+      addToken(if match('=') then :NE else error(@line, "unexpected character #{c}") end)
+    when '>'
+      addToken(if match('=') then :GE else :GT end)
+    when '<'
+      addToken(if match('=') then :LE else :LT end)
     when " "
     when "\r"
     when "\t"
@@ -64,7 +80,7 @@ class Scanner
       elsif isAlpha(c)
         identifier()
       else
-        error(@line, "unexpected character #{c.ord}")
+        error(@line, "unexpected character #{c}")
       end
 
     end
@@ -86,6 +102,17 @@ class Scanner
       return '\0'
     end
     @source[@current]
+  end
+
+  def match(expected)
+    if isAtEnd
+      return false
+    end
+    if @source[@current] != expected
+      return false
+    end
+    advance
+    true
   end
 
   def isDigit(c)

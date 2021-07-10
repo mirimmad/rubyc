@@ -21,7 +21,15 @@ class Gen
       @cg.cgload(node.value.to_i)
     when Binary
       binary(node)
+    when Ident
+      Ident(node)
+    when LVIdent
+      LVIdent(node, reg)
     when Statements
+      for stmt in node.stmts
+        gen(stmt, -1)
+      end
+    when Compoundstatement
       for stmt in node.stmts
         gen(stmt, -1)
       end
@@ -31,10 +39,8 @@ class Gen
       varDecl(node)
     when AssignmentStmt
       assignmentStmt(node)
-    when Ident
-      Ident(node)
-    when LVIdent
-      LVIdent(node, reg)
+    when IfStmt
+      puts "an if stmt"
     end
 
   end
@@ -59,10 +65,30 @@ class Gen
       @cg.cgmul(leftreg, rightreg)
     when :SLASH
       @cg.cgdiv(leftreg, rightreg)
+    when :EQ_EQ
+      @cg.cgcompare(leftreg, rightreg, "sete")
+    when :NE
+      @cg.cgcompare(leftreg, rightreg, "setne")
+    when :LT
+      @cg.cgcompare(leftreg, rightreg, "setl")
+    when :LE
+      @cg.cgcompare(leftreg, rightreg, "setle")
+    when :GT
+      @cg.cgcompare(leftreg, rightreg, "setg")
+    when :GE
+      @cg.cgcompare(leftreg, rightreg, "setge")
     else
       puts "unknown AST op #{node.a_type}"
       exit(1)
     end
+  end
+
+  def Ident(node)
+    @cg.cgloadglob(@sym.names[node.id])
+  end
+
+  def LVIdent(node, reg)
+    @cg.cgstoreglob(reg, @sym.names[node.id])
   end
 
   def printStmt(node)
@@ -83,13 +109,7 @@ class Gen
     rightreg
   end
 
-  def Ident(node)
-    @cg.cgloadglob(@sym.names[node.id])
+  def ifStmt(node)
   end
-
-  def LVIdent(node, reg)
-    @cg.cgstoreglob(reg, @sym.names[node.id])
-  end
-  
 
 end

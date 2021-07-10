@@ -11,7 +11,8 @@ ss = Scanner.new(s)
 
 sym = GlobalSymTab.new
 p = Parser.new(ss.scanTokens, sym)
-puts x = p.parse
+#puts 
+x = p.parse
 
 output = nil
 begin

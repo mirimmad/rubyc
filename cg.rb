@@ -5,6 +5,7 @@ class Cg
     @output = output
     @freereg = Array.new(4).fill(0)
     @reglist = ["%r8","%r9", "%r10", "%r11"]
+    @breglist = ["%r8b","%r9b", "%r10b", "%r11b"]
   end
 
   def allocate_register
@@ -61,8 +62,8 @@ class Cg
   end
 
   def cgpostamble
-    code = "\tmovl $0, %eax\n"
-    code += "\tpopq %rbp\n"
+    code = "\tmovl\t$0, %eax\n"
+    code += "\tpopq\t%rbp\n"
     code += "\tret\n"
     @output.puts code
   end
@@ -128,6 +129,15 @@ class Cg
   def cgglobsym(sym)
     code = "\t.comm\t#{sym},8,8\n"
     @output.puts code
+  end
+
+  def cgcompare(r1, r2, how)
+    code = "\tcmpq\t#{@reglist[r2]}, #{@reglist[r1]}\n"
+    code += "\t#{how}\t#{@breglist[r2]}\n"
+    code += "\tandq\t$255, #{@reglist[r2]}\n"
+    @output.puts code
+    free_register(r1)
+    r2
   end
 
 end

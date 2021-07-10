@@ -63,6 +63,7 @@ class LVIdent < Expression
 end
 
 class Statements < Statement
+  # a simple set of statements
   attr_reader :stmts
   def initialize(stmts)
     @stmts = stmts
@@ -72,6 +73,25 @@ class Statements < Statement
       puts s.to_s
     end
     ""
+  end
+  def inspect
+    to_s
+  end
+end
+
+class Compoundstatement < Statement
+  # like `Statements` but enclosed by barces
+  attr_reader :stmts
+  def initialize(stmts)
+    @stmts = stmts
+  end
+  def to_s
+   puts "BLOCK"
+    for s in stmts
+      puts s.to_s
+    end
+    puts "BLOCK END"
+    ''
   end
   def inspect
     to_s
@@ -120,6 +140,29 @@ class AssignmentStmt < Statement
   def to_s
     "Assign: #{@left.to_s} = #{@right.to_s}"
   end
+  def inspect
+    to_s
+  end
+end
+
+class IfStmt < Statement
+  def initialize(cond, thenBranch, elseBranch)
+    @cond = cond
+    @thenBranch = thenBranch
+    @elseBranch = elseBranch
+  end
+
+  def to_s
+    puts "IF"
+    puts "(" + @cond.to_s + ")"
+    puts "THEN"
+    puts @thenBranch.to_s
+    if @elseBranch != nil
+      puts "ELSE"
+      puts @elseBranch.to_s
+    end
+  end
+
   def inspect
     to_s
   end
