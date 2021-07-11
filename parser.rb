@@ -130,8 +130,6 @@ class Parser
     if(@token.type == :ELSE)
       advance
       elseBranch = compoundStatement
-    else
-      puts "no else branch"
     end
 
     IfStmt.new(cond, thenBranch, elseBranch)
