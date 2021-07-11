@@ -1,10 +1,12 @@
-#tokens = [:EOF, :INT(type), :PLUS, :MINUS, :STAR, :SLASH, :EQ_EQ, :EQUALS, :NE, :LT, :LE, :GT, :GE, :SEMI, :PRINT, :IDENT, :NNUMBER, :LBRACE, :RBRACE, :IF, :ELSE]
+#tokens = [:EOF, :INT(type), :PLUS, :MINUS, :STAR, :SLASH, :EQ_EQ, :EQUALS, :NE, :LT, :LE, :GT, :GE, :SEMI, :PRINT, :IDENT, :NNUMBER, :LBRACE, :RBRACE, :IF, :ELSE, :WHILE, :FOR]
 
 $keywords = {
   "print" => :PRINT,
   "int" => :INT,
   "if" => :IF,
-  "else" => :ELSE
+  "else" => :ELSE,
+  "while" => :WHILE,
+  "for" => :FOR
 }
 
 

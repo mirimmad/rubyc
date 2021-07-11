@@ -168,3 +168,23 @@ class IfStmt < Statement
     to_s
   end
 end
+
+class WhileStmt < Statement
+  attr_reader :cond, :body
+  def initialize(cond, body)
+    @cond = cond
+    @body = body
+  end
+
+  def to_s
+    puts "WHILE:"
+    puts @cond.to_s
+    puts "BODY:"
+    puts @body.to_s
+    puts "WHILE_END"
+  end
+
+  def inspect
+    to_s
+  end
+end

@@ -28,25 +28,40 @@ class Parser
     compoundStatement
   end
 
-  def compoundStatement
+  def singleStmt
+    case @token.type
+    when :PRINT
+       printStmt
+    when :INT
+      varDecl
+    when :IDENT
+      assignmentStmt
+    when :IF
+      ifStmt
+    when :WHILE
+      whileStmt
+    when :FOR
+      forStmt
+    else
+      error(@token.line, "Syntax error", @token.type)
+    end
+  end
+
+  def compoundStatement()
+    # single = true allows only one statement
     list = []
     match(:LBRACE, "{")
     while 1
-      case @token.type
-      when :PRINT
-        list.push printStmt
-      when :INT
-        list.push varDecl
-      when :IDENT
-        list.push assignmentStmt
-      when :IF
-        list.push ifStmt
-      when :RBRACE
-        match(:RBRACE, "}")
-        break
-      else
-        error(@token.line, "Syntax error", @token.type)
-      end
+     stmt = singleStmt
+     if [PrintStmt, AssignmentStmt].include? stmt.class
+      match(:SEMI, ";")
+     end
+     list.push stmt
+     if @token.type == :RBRACE
+      match(:RBRACE, "}")
+      break
+     end
+
     end
     Compoundstatement.new list
   end
@@ -73,7 +88,7 @@ class Parser
 
     left = binexp(0)
     t = AssignmentStmt.new(left, right)
-    match(:SEMI, ";")
+    #match(:SEMI, ";")
     t
   end
 
@@ -101,11 +116,44 @@ class Parser
 
   end
 
+  def whileStmt
+    match(:WHILE, "while")
+    match(:LPAREN, "(")
+    cond = binexp(0)
+    if not [:EQ_EQ, :NE, :LT, :LE, :GT, :GE].include? cond.a_type
+      fatal("bad comparision operator.")
+    end
+
+    match(:RPAREN, ")")
+
+    body = compoundStatement
+    WhileStmt.new(cond,body)
+  end
+
+  def forStmt
+    match(:FOR, "for")
+    match(:LPAREN, "(")
+    preop = singleStmt
+    #puts preop, @token
+    match(:SEMI, ";")
+    cond = binexp(0)
+
+    if not [:EQ_EQ, :NE, :LT, :LE, :GT, :GE].include? cond.a_type
+      fatal("bad comparision operator.")
+    end
+    match(:SEMI, ")")
+    postop = singleStmt
+    match(:RPAREN, ")")
+    body = compoundStatement
+    body.stmts.push postop
+    while_ = WhileStmt.new(cond, body)
+    Statements.new([preop, while_])
+  end
 
   def printStmt
       match(:PRINT, "print")
       tree = binexp(0)
-      match(:SEMI, ";")
+      #match(:SEMI, ";")
       PrintStmt.new(tree)
   end
 
