@@ -12,8 +12,7 @@ class Gen
   #The kernel function
   def genCode()
     @cg.cgpreamble
-    gen(@node, -1)
-    @cg.cgpostamble
+    gen(@node)
   end
 
   #The traversal function
@@ -45,6 +44,8 @@ class Gen
       ifStmt(node)
     when WhileStmt
       whileStmt(node)
+    when FuncDecl
+      funcDecl(node)
     end
 
   end
@@ -100,6 +101,11 @@ class Gen
     code = @cg.cgglobsym(node.ident)
   end
 
+  def funcDecl(node)
+    @cg.cgfuncpreamble(node.name)
+    gen(node.body)
+    @cg.cgfuncpostamble
+  end
   def assignmentStmt(node)
     #LVIdent is the right of the node
     #left is the exprssion which will "compile" into register that stores the result

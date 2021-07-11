@@ -49,15 +49,26 @@ class Cg
 	  code += "\tleaq	.LC0(%rip), %rdi\n"
 	  code += "\tmovl	$0, %eax\n"
 	  code += "\tcall	printf@PLT\n"
-	  code += "\tnop\n"
-	  code += "\tleave\n"
-	  code += "\tret\n"
-	  code += "\n"
-	  code += "\t.globl\tmain\n"
-	  code += "\t.type\tmain, @function\n"
-	  code += "main:\n"
-	  code += "\tpushq\t%rbp\n"
-	  code += "\tmovq	%rsp, %rbp\n"
+    code += "\tnop\n"
+    code += "\tleave\n"
+    code += "\tret\n"
+    @output.puts code
+  end
+  
+  def cgfuncpreamble(name)
+    code = "\t.text\n"
+    code += "\t.globl\t#{name}\n"
+    code += "\t.type\t#{name}, @function\n"
+    code += "#{name}:\n"
+    code += "\tpushq\t%rbp\n"
+    code += "\tmovq\t%rsp, %rbp\n"
+    @output.puts code
+  end
+
+  def cgfuncpostamble
+    code = "\tmovl\t$0, %eax\n"
+    code += "\tpopq\t%rbp\n"
+    code += "\tret\n"
     @output.puts code
   end
 

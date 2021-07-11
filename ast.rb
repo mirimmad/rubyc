@@ -98,20 +98,6 @@ class Compoundstatement < Statement
   end
 end
 
-class PrintStmt < Statement
-  attr_reader :expr
-  def initialize(expr)
-    @expr = expr
-  end
-
-  def to_s
-    "PRINT: " + @expr.to_s
-  end
-  def inspect
-    to_s
-  end
-end
-
 class VarDecl < Statement
   attr_reader :ident, :id
   
@@ -128,6 +114,41 @@ class VarDecl < Statement
     to_s
   end
 end
+
+class FuncDecl < Statement
+  attr_reader :name, :body
+  def initialize(name, nameslot, body)
+    @name = name
+    @nameslot = nameslot
+    @body = body
+  end
+  
+  def to_s
+    puts "FUNC #{@name}"
+    puts body.to_s
+    puts "F_END"
+  end
+
+  def inspect
+    to_s
+  end
+end
+
+class PrintStmt < Statement
+  attr_reader :expr
+  def initialize(expr)
+    @expr = expr
+  end
+
+  def to_s
+    "PRINT: " + @expr.to_s
+  end
+  def inspect
+    to_s
+  end
+end
+
+
 
 class AssignmentStmt < Statement
   attr_reader :left, :right
@@ -171,6 +192,7 @@ end
 
 class WhileStmt < Statement
   attr_reader :cond, :body
+
   def initialize(cond, body)
     @cond = cond
     @body = body

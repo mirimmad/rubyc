@@ -25,7 +25,18 @@ class Parser
 
   def parse 
     advance
-    compoundStatement
+    statements
+  end
+
+  def statements
+    list = []
+    while 1
+      list.push funcDecl
+      if @token.type == :EOF
+        break
+      end
+    end
+    Statements.new(list)
   end
 
   def singleStmt
@@ -47,7 +58,7 @@ class Parser
     end
   end
 
-  def compoundStatement()
+  def compoundStatement
     # single = true allows only one statement
     list = []
     match(:LBRACE, "{")
@@ -66,6 +77,17 @@ class Parser
     Compoundstatement.new list
   end
 
+  def funcDecl
+    match(:VOID, "void")
+    check(:IDENT)
+    name = @token.literal
+    nameslot = @sym.addglob(@token.literal)
+    advance
+    match(:LPAREN, "(")
+    match(:RPAREN, ")")
+    body = compoundStatement
+    FuncDecl.new(name, nameslot, body)
+  end
 
   def varDecl
     match(:INT, "int")
