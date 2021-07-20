@@ -1,6 +1,7 @@
 
 require_relative "ast.rb"
 require_relative "sym.rb"
+require_relative "types.rb"
 
 $opOprec = {
   :SLASH => 7,
@@ -43,7 +44,7 @@ class Parser
     case @token.type
     when :PRINT
        printStmt
-    when :INT
+    when :INT, :CHAR
       varDecl
     when :IDENT
       assignmentStmt
@@ -74,7 +75,7 @@ class Parser
      end
 
     end
-    Compoundstatement.new list
+    Statements.new list
   end
 
   def funcDecl
@@ -88,11 +89,25 @@ class Parser
     body = compoundStatement
     FuncDecl.new(name, nameslot, body)
   end
+  
+  def parseType(type)
+    case type
+    when :INT
+      :P_INT
+    when :CHAR
+      :P_CHAR
+    when :VOID
+      :P_VOID
+    else
+      fatal("Illegal token type #{type}")
+    end
+  end
 
   def varDecl
-    match(:INT, "int")
+    type = parseType(@token.type)
+    advance
     check(:IDENT)
-    id = @sym.addglob(@token.literal)
+    id = @sym.addglob(@token.literal, type, :S_VARIABLE)
     ident = @token.literal
     advance
     match(:SEMI, ";")
@@ -100,15 +115,24 @@ class Parser
   end
 
   def assignmentStmt
+    #left = the expression to be stored
+    #right = the LVALUE where the expression is to be stored
     check(:IDENT)
     if((id = @sym.findglob(@token.literal)) == -1)
       error(@token.line, "Undeclared variable", @token.literal)
     end
     advance
-    right = LVIdent.new(@token.literal, id)
+    right = LVIdent.new(@token.literal, id, @sym.names[id]["type"])
     match(:EQUALS, "=")
 
     left = binexp(0)
+    comp = Types.compatibleTypes(left.type, right.type, true)
+    case comp
+    when :INCOMPATIBLE
+      fatal("incomapitble type: assign")
+    when :WIDEN_LEFT
+      left.type = right.type
+    end
     t = AssignmentStmt.new(left, right)
     #match(:SEMI, ";")
     t
@@ -173,6 +197,10 @@ class Parser
   def printStmt
       match(:PRINT, "print")
       tree = binexp(0)
+      comp = Types.compatibleTypes(:P_INT, tree.type)
+      if comp == :WIDEN_RIGHT
+        tree.type = :INT
+      end
       #match(:SEMI, ";")
       PrintStmt.new(tree)
   end
@@ -183,13 +211,18 @@ class Parser
     n = nil
     case @token.type
     when :NUMBER
-      n = IntLit.new(@token.literal)
+      val = @token.literal.to_i
+      if  val >= 0 and val < 256
+        n = IntLit.new(val, :P_CHAR)
+      else
+        n = IntLit.new(val, :P_INT)
+      end
     when :IDENT
       id = @sym.findglob(@token.literal)
       if(id == -1)
         error(@token.line, "Unknown variable '#{@token.literal}'", @token.type)
       end
-      n = Ident.new(@token.literal, id)
+      n = Ident.new(@token.literal, id, @sym.names[id]["type"])
     else
       error(@token.line, "syntax error", @token.type)
     end
@@ -208,8 +241,16 @@ class Parser
     while(op_prec(token_) > prec) 
       advance
       right = binexp($opOprec[token_.type])
-
-      left = Binary.new(token_.type, left, right)
+      comp = Types.compatibleTypes(left.type, right.type)
+      case comp
+      when :INCOMPATIBLE
+        fatal("incompatible types.")
+      when :WIDEN_LEFT
+        left.type = :P_INT
+      when :WIDEN_RIGHT
+        right.type = :P_INT
+      end
+      left = Binary.new(token_.type, left.type, left, right)
 
       token_= @token
       if (token_.type == :SEMI || token_.type == :RPAREN)
@@ -244,14 +285,14 @@ class Parser
     if(@token.type == type)
       return true
     else
-      error(previous.line, "excpected #{what}", nil)
+      fatal("unexpected #{@token.literal}")
     end
   end
 
   def match(type, what)
     if(@token.type == type)
       advance
-      return true
+      return previous
     else
       error(previous.line, "excpected #{what}", nil)
     end
@@ -272,7 +313,7 @@ class Parser
   end
 
   def fatal(message)
-    puts message
+    puts "Parse:" + message
     exit(1)
   end
 

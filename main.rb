@@ -3,7 +3,7 @@ require_relative "parser.rb"
 require_relative "gen.rb"
 require_relative "sym.rb"
 
-s = File.read("input02.txt")
+s = File.read(if ARGV[0] == nil then "input02.txt" else ARGV[0].to_s end )
 ss = Scanner.new(s)
 #ss.scanTokens.each do |x|
  # puts x

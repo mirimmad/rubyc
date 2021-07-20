@@ -5,6 +5,7 @@ class Gen
   def initialize(node, output, sym)
     @node = node
     @cg = Cg.new(output)
+    puts sym.names
     @sym = sym
     @nlabel = 0
   end
@@ -27,10 +28,6 @@ class Gen
     when LVIdent
       LVIdent(node, reg)
     when Statements
-      for stmt in node.stmts
-        gen(stmt)
-      end
-    when Compoundstatement
       for stmt in node.stmts
         gen(stmt)
       end
@@ -84,11 +81,11 @@ class Gen
   end
 
   def Ident(node)
-    @cg.cgloadglob(@sym.names[node.id])
+    @cg.cgloadglob(@sym.names[node.id]["name"], @sym.names[node.id]["type"])
   end
 
   def LVIdent(node, reg)
-    @cg.cgstoreglob(reg, @sym.names[node.id])
+    @cg.cgstoreglob(reg, @sym.names[node.id]["name"], @sym.names[node.id]["type"])
   end
 
   def printStmt(node)
@@ -98,7 +95,7 @@ class Gen
   end
 
   def varDecl(node)
-    code = @cg.cgglobsym(node.ident)
+    code = @cg.cgglobsym(node.ident, @sym.names[node.id]["type"])
   end
 
   def funcDecl(node)

@@ -9,8 +9,8 @@ class GlobalSymTab
     end
 
     def findglob(s)
-        @names.each do |i, name|
-            if name == s
+        @names.each do |i, props|
+            if props["name"] == s
                 return i
             end
         end
@@ -25,13 +25,13 @@ class GlobalSymTab
         p 
     end
 
-    def addglob(s)
-        if ((y = findglob(s)) != -1)
+    def addglob(name, type=nil, s_type=nil)
+        if ((y = findglob(name)) != -1)
             return y
         end
 
         y = newglob
-        @names[y] = s
+        @names[y] = {"name" => name, "type" => type, "s_type" => s_type}
         y
     end
 end

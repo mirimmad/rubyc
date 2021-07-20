@@ -9,21 +9,24 @@ end
 
 class IntLit < Expression
   attr_reader :value
-  def initialize(value)
+  attr_accessor :type
+  def initialize(value, type)
     @value = value
+    @type = type
   end
   def to_s
-    "#{@value}"
+    "[#{@type}] #{@value}"
   end
 end
 
 
 class Binary < Expression
-  attr_reader :a_type, :left, :right
-  def initialize(a_type, left, right)
+  attr_reader :a_type, :type, :left, :right
+  def initialize(a_type, type, left, right)
     @a_type = a_type
     @left = left
     @right = right
+    @type = type
   end
 
   def to_s
@@ -34,13 +37,15 @@ end
 
 class Ident < Expression
   attr_reader :name, :id
-  def initialize(name, id)
+  attr_accessor :type
+  def initialize(name, id, type)
     @name = name
     @id = id
+    @type = type
   end
 
   def to_s
-    "Ident #{@name}(#{@id})"
+    "Ident #{@name}(#{@type}, #{@id})"
   end
   def inspect
     to_s
@@ -49,13 +54,15 @@ end
 
 class LVIdent < Expression
   attr_reader :name, :id
-  def initialize(name, id)
+  attr_accessor :type
+  def initialize(name, id, type)
     @name = name
     @id = id
+    @type = type
   end
 
   def to_s
-    "LVIdent #{@name}(#{@id})"
+    "LVIdent #{@name}(#{@type}, #{@id})"
   end
   def inspect
     to_s
@@ -79,6 +86,7 @@ class Statements < Statement
   end
 end
 
+=begin
 class Compoundstatement < Statement
   # like `Statements` but enclosed by barces
   attr_reader :stmts
@@ -97,6 +105,7 @@ class Compoundstatement < Statement
     to_s
   end
 end
+=end
 
 class VarDecl < Statement
   attr_reader :ident, :id
@@ -126,7 +135,7 @@ class FuncDecl < Statement
   def to_s
     puts "FUNC #{@name}"
     puts body.to_s
-    puts "F_END"
+    puts "F_END #{@name}"
   end
 
   def inspect

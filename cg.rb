@@ -4,8 +4,8 @@ class Cg
   def initialize(output)
     @output = output
     @freereg = Array.new(4).fill(0)
-    @reglist = ["%r8","%r9", "%r10", "%r11"]
-    @breglist = ["%r8b","%r9b", "%r10b", "%r11b"]
+    @reglist = ["%r8","%r9", "%r10", "%r11"].freeze
+    @breglist = ["%r8b","%r9b", "%r10b", "%r11b"].freeze
   end
 
   def allocate_register
@@ -124,21 +124,36 @@ class Cg
     free_register(r)
   end
 
-  def cgloadglob(identifier)
+  def cgloadglob(identifier, type)
     r = allocate_register()
-    code =  "\tmovq\t#{identifier}(%rip), #{@reglist[r]}\n"
+    case type
+    when :P_INT
+      code =  "\tmovq\t#{identifier}(%rip), #{@reglist[r]}\n"
+    else
+      code = "\tmovzbq\t#{identifier}(%rip), #{@reglist[r]}\n" 
+    end
     @output.puts code
     r
   end
 
-  def cgstoreglob(r, identifier)
-    code = "\tmovq\t#{@reglist[r]}, #{identifier}(%rip)\n"
+  def cgstoreglob(r, identifier, type)
+    case type
+    when :P_INT
+      code = "\tmovq\t#{@reglist[r]}, #{identifier}(%rip)\n"
+    else
+      code = "\tmovb\t#{@breglist[r]}, #{identifier}(%rip)\n"
+    end
     @output.puts code
     r
   end
 
-  def cgglobsym(sym)
-    code = "\t.comm\t#{sym},8,8\n"
+  def cgglobsym(sym, type)
+    case type
+    when :P_INT
+      code = "\t.comm\t#{sym},8,8\n"
+    when :P_CHAR
+      code = "\t.comm\t#{sym},1,1\n"
+    end
     @output.puts code
   end
 
