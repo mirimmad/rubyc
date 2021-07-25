@@ -1,13 +1,16 @@
 
 require_relative "cg.rb"
+require_relative "label.rb"
+
+
 
 class Gen
   def initialize(node, output, sym)
     @node = node
-    @cg = Cg.new(output)
+    @cg = Cg.new(output, sym)
     puts sym.names
     @sym = sym
-    @nlabel = 0
+    
   end
 
   #The kernel function
@@ -43,6 +46,10 @@ class Gen
       whileStmt(node)
     when FuncDecl
       funcDecl(node)
+    when FuncCall
+      funcCall(node)
+    when ReturnStmt
+      returnStmt(node)
     end
 
   end
@@ -81,11 +88,11 @@ class Gen
   end
 
   def Ident(node)
-    @cg.cgloadglob(@sym.names[node.id]["name"], @sym.names[node.id]["type"])
+    @cg.cgloadglob(node.id)
   end
 
   def LVIdent(node, reg)
-    @cg.cgstoreglob(reg, @sym.names[node.id]["name"], @sym.names[node.id]["type"])
+    @cg.cgstoreglob(reg, node.id)
   end
 
   def printStmt(node)
@@ -95,13 +102,13 @@ class Gen
   end
 
   def varDecl(node)
-    code = @cg.cgglobsym(node.ident, @sym.names[node.id]["type"])
+    code = @cg.cgglobsym(node.id)
   end
 
   def funcDecl(node)
     @cg.cgfuncpreamble(node.name)
     gen(node.body)
-    @cg.cgfuncpostamble
+    @cg.cgfuncpostamble(node.nameslot)
   end
   def assignmentStmt(node)
     #LVIdent is the right of the node
@@ -112,15 +119,15 @@ class Gen
     rightreg
   end
 
-  def label
-    @nlabel = @nlabel + 1
+  def self.label
+    $nlabel = $nlabel + 1
   end
 
   def ifStmt(node)
-    lfalse = label
+    lfalse = Label::label
     lend = nil
     if(node.elseBranch != nil)
-      lend = label
+      lend = Label::label
     end
     binary(node.cond, true, lfalse)
     @cg.freeall_registers
@@ -144,8 +151,8 @@ class Gen
   end
 
   def whileStmt(node)
-    lstart = label
-    lend = label
+    lstart = Label::label
+    lend = Label::label
 
     @cg.cglabel(lstart)
     binary(node.cond, true, lend)
@@ -158,4 +165,13 @@ class Gen
     -1
   end
 
+  def funcCall(node)
+    reg = gen(node.args[0])
+    @cg.cgcall(reg, node.id)
+  end
+
+  def returnStmt(node)
+    reg = gen(node.expr)
+    @cg.cgreturn(reg, node.functionId)
+  end
 end

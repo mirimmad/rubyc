@@ -25,13 +25,13 @@ class GlobalSymTab
         p 
     end
 
-    def addglob(name, type=nil, s_type=nil)
+    def addglob(name, type=nil, s_type=nil, endlabel=nil)
         if ((y = findglob(name)) != -1)
             return y
         end
 
         y = newglob
-        @names[y] = {"name" => name, "type" => type, "s_type" => s_type}
+        @names[y] = {"name" => name, "type" => type, "s_type" => s_type, "endlabel" => endlabel}
         y
     end
 end

@@ -1,11 +1,14 @@
 
+require_relative "types.rb"
 
 class Cg
-  def initialize(output)
+  def initialize(output, sym)
     @output = output
+    @sym = sym
     @freereg = Array.new(4).fill(0)
     @reglist = ["%r8","%r9", "%r10", "%r11"].freeze
     @breglist = ["%r8b","%r9b", "%r10b", "%r11b"].freeze
+    @dreglist = ["%r8d", "%r9d", "%r10d", "%r11d"].freeze
   end
 
   def allocate_register
@@ -65,16 +68,9 @@ class Cg
     @output.puts code
   end
 
-  def cgfuncpostamble
-    code = "\tmovl\t$0, %eax\n"
-    code += "\tpopq\t%rbp\n"
-    code += "\tret\n"
-    @output.puts code
-  end
-
-  def cgpostamble
-    code = "\tmovl\t$0, %eax\n"
-    code += "\tpopq\t%rbp\n"
+  def cgfuncpostamble(id)
+    cglabel(@sym.names[id]["endlabel"])
+    code = "\tpopq %rbp\n"
     code += "\tret\n"
     @output.puts code
   end
@@ -124,36 +120,44 @@ class Cg
     free_register(r)
   end
 
-  def cgloadglob(identifier, type)
+  def cgloadglob(id)
+    identifier = @sym.names[id]["name"]
+    type = @sym.names[id]["type"]
     r = allocate_register()
     case type
-    when :P_INT
-      code =  "\tmovq\t#{identifier}(%rip), #{@reglist[r]}\n"
-    else
+    when :P_CHAR
       code = "\tmovzbq\t#{identifier}(%rip), #{@reglist[r]}\n" 
+    when :P_INT
+      code =  "\tmovzbl\t#{identifier}(%rip), #{@reglist[r]}\n"
+    when :P_LONG
+      code = "\tmovq\t#{identifier}(%rip), #{@reglist[r]}\n"
+    else
+      fatal("bad type in cgloaglglob #{type}")
     end
     @output.puts code
     r
   end
 
-  def cgstoreglob(r, identifier, type)
+  def cgstoreglob(r, id)
+    identifier = @sym.names[id]["name"]
+    type = @sym.names[id]["type"]
     case type
     when :P_INT
+      code = "\tmovl\t#{@dreglist[r]}, #{identifier}(%rip)\n"
+    when :P_CHAR
+      code = "\tmovb\t#{@breglist[r]}, #{identifier}(%rip)\n"
+    when :P_LONG
       code = "\tmovq\t#{@reglist[r]}, #{identifier}(%rip)\n"
     else
-      code = "\tmovb\t#{@breglist[r]}, #{identifier}(%rip)\n"
+      fatal("Bad type in cgstoreglob, #{type}")
     end
     @output.puts code
     r
   end
 
-  def cgglobsym(sym, type)
-    case type
-    when :P_INT
-      code = "\t.comm\t#{sym},8,8\n"
-    when :P_CHAR
-      code = "\t.comm\t#{sym},1,1\n"
-    end
+  def cgglobsym(id)
+    typesize = Types::primsize(@sym.names[id]["type"])
+    code = "\t.comm\t#{@sym.names[id]["name"]}, #{typesize},#{typesize}"
     @output.puts code
   end
 
@@ -189,6 +193,31 @@ class Cg
     @output.puts code
     freeall_registers()
     -1
+  end
+
+  def cgcall(reg, id)
+    outr = allocate_register
+    code = "\tmovq\t#{@reglist[reg]}, %rdi\n"
+    code += "\tcall\t#{@sym.names[id]["name"]}\n"
+    code += "\tmovq\t%rax, #{@reglist[outr]}\n"
+    @output.puts code
+    free_register reg
+    outr
+  end
+
+  def cgreturn(reg, id)
+    case @sym.names[id]["type"]
+    when :P_CHAR
+      code = "\tmovzbl\t#{@breglist[reg]}, %eax\n"
+    when :P_INT
+      code = "\tmovl\t#{@dreglist[reg]}, %eax\n"
+    when :P_LONG
+      code = "\tmovq\t#{@reglist[reg]}, %rax\n"
+    else
+      fatal("bad type in cgreturn")
+    end
+    @output.puts code
+    cgjmp(@sym.names[id]["endlabel"])
   end
 
   def fatal(message)

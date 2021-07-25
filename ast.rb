@@ -69,6 +69,23 @@ class LVIdent < Expression
   end
 end
 
+class FuncCall < Expression
+  attr_accessor :type, :args, :id
+  def initialize(type, args, id)
+    @type = type
+    @args = args
+    @id = id
+  end
+
+  def to_s
+    "Call to #{@id} with #{@args.map{|x|x.to_s}}"
+  end
+
+  def inspect
+    to_s
+  end
+end
+
 class Statements < Statement
   # a simple set of statements
   attr_reader :stmts
@@ -125,7 +142,7 @@ class VarDecl < Statement
 end
 
 class FuncDecl < Statement
-  attr_reader :name, :body
+  attr_reader :name, :body, :nameslot
   def initialize(name, nameslot, body)
     @name = name
     @nameslot = nameslot
@@ -213,6 +230,23 @@ class WhileStmt < Statement
     puts "BODY:"
     puts @body.to_s
     puts "WHILE_END"
+  end
+
+  def inspect
+    to_s
+  end
+end
+
+class ReturnStmt < Statement
+  attr_reader :expr, :functionId
+
+  def initialize(expr, functionId)
+    @expr = expr
+    @functionId = functionId
+  end
+
+  def to_s
+    "RETURN " + @expr.to_s
   end
 
   def inspect

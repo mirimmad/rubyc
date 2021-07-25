@@ -1,4 +1,4 @@
-#tokens = [:EOF, :INT(type), :PLUS, :MINUS, :STAR, :SLASH, :EQ_EQ, :EQUALS, :NE, :LT, :LE, :GT, :GE, :SEMI, :PRINT, :IDENT, :NNUMBER, :LBRACE, :RBRACE, :IF, :ELSE, :WHILE, :FOR, :VOID, :CHAR]
+#tokens = [:EOF, :INT(type), :PLUS, :MINUS, :STAR, :SLASH, :EQ_EQ, :EQUALS, :NE, :LT, :LE, :GT, :GE, :SEMI, :PRINT, :IDENT, :NNUMBER, :LBRACE, :RBRACE, :IF, :ELSE, :WHILE, :FOR, :VOID, :CHAR, :LONG, :RETURN]
 
 $keywords = {
   "print" => :PRINT,
@@ -8,7 +8,9 @@ $keywords = {
   "while" => :WHILE,
   "for" => :FOR,
   "void" => :VOID,
-  "char" => :CHAR
+  "char" => :CHAR,
+  "long" => :LONG,
+  "return" => :RETURN
 }
 
 
@@ -56,6 +58,8 @@ class Scanner
       addToken(:SLASH)
     when ';'
       addToken(:SEMI)
+    when ','
+      addToken(:COMMA)
     when '{'
       addToken(:LBRACE)
     when '}'

@@ -2,6 +2,8 @@
 require_relative "ast.rb"
 require_relative "sym.rb"
 require_relative "types.rb"
+require_relative "label.rb"
+
 
 $opOprec = {
   :SLASH => 7,
@@ -22,6 +24,7 @@ class Parser
     @current = 0
     @token = nil
     @sym = sym
+    @functionId = 0
   end
 
   def parse 
@@ -54,6 +57,8 @@ class Parser
       whileStmt
     when :FOR
       forStmt
+    when :RETURN
+      returnStmt
     else
       error(@token.line, "Syntax error", @token.type)
     end
@@ -65,7 +70,7 @@ class Parser
     match(:LBRACE, "{")
     while 1
      stmt = singleStmt
-     if [PrintStmt, AssignmentStmt].include? stmt.class
+     if [PrintStmt, AssignmentStmt, FuncCall, ReturnStmt].include? stmt.class
       match(:SEMI, ";")
      end
      list.push stmt
@@ -79,14 +84,23 @@ class Parser
   end
 
   def funcDecl
-    match(:VOID, "void")
+    type = parseType(@token.type)
+    line = @token.line
+    advance
     check(:IDENT)
     name = @token.literal
-    nameslot = @sym.addglob(@token.literal)
+    endlabel = Label::label
+    nameslot = @sym.addglob(@token.literal,type, :S_FUNCTION, endlabel)
+    @functionId = nameslot
     advance
     match(:LPAREN, "(")
     match(:RPAREN, ")")
     body = compoundStatement
+    if not type == :P_VOID
+      if not body.stmts[-1].class == ReturnStmt
+        error(line, "No return from a function with non-void type")
+      end
+    end
     FuncDecl.new(name, nameslot, body)
   end
   
@@ -98,8 +112,10 @@ class Parser
       :P_CHAR
     when :VOID
       :P_VOID
+    when :LONG
+      :P_LONG
     else
-      fatal("Illegal token type #{type}")
+      error(@token.line,"Illegal token type #{type}")
     end
   end
 
@@ -114,10 +130,32 @@ class Parser
     VarDecl.new(ident, id)
   end
 
+  def returnStmt
+    rType = @sym.names[@functionId]["type"] 
+    if rType == :P_VOID
+      error(@token.line, "Can't return from a void function")
+    end
+    match(:RETURN, "return")
+    match(:LPAREN, "(")
+    expr = binexp(0)
+    comp = Types::compatibleTypes(expr.type, rType, true)
+    case comp
+    when :INCOMPATIBLE
+      error(@token.line, "Incompatible types")
+    when :WIDEN_LEFT
+      expr.type = rType
+    end
+    match(:RPAREN, ")")
+    ReturnStmt.new(expr, @functionId)
+  end
+
   def assignmentStmt
     #left = the expression to be stored
     #right = the LVALUE where the expression is to be stored
     check(:IDENT)
+    if peek.type == :LPAREN
+      return funccall
+    end
     if((id = @sym.findglob(@token.literal)) == -1)
       error(@token.line, "Undeclared variable", @token.literal)
     end
@@ -126,10 +164,10 @@ class Parser
     match(:EQUALS, "=")
 
     left = binexp(0)
-    comp = Types.compatibleTypes(left.type, right.type, true)
+    comp = Types::compatibleTypes(left.type, right.type, true)
     case comp
     when :INCOMPATIBLE
-      fatal("incomapitble type: assign")
+      error(@token.line, "Incompatilbe types in assignment")
     when :WIDEN_LEFT
       left.type = right.type
     end
@@ -197,7 +235,7 @@ class Parser
   def printStmt
       match(:PRINT, "print")
       tree = binexp(0)
-      comp = Types.compatibleTypes(:P_INT, tree.type)
+      comp = Types::compatibleTypes(:P_INT, tree.type)
       if comp == :WIDEN_RIGHT
         tree.type = :INT
       end
@@ -205,7 +243,20 @@ class Parser
       PrintStmt.new(tree)
   end
 
-  
+  def funccall
+    if ((id = @sym.findglob(previous.literal)) == -1)
+      error(previous.line,"Undeclared function '#{previous.literal}'")
+    end
+    if not @sym.names[id]["s_type"] == :S_FUNCTION
+      error(previous.line, "Calling a non-function.")
+    end
+    advance
+    match(:LPAREN, "(")
+    args = []
+    args.push binexp(0)
+    match(:RPAREN, ")")
+    FuncCall.new(@sym.names[id]["type"], args, id)
+  end
 
   def primary
     n = nil
@@ -218,6 +269,9 @@ class Parser
         n = IntLit.new(val, :P_INT)
       end
     when :IDENT
+      if peek.type == :LPAREN
+        return funccall
+      end 
       id = @sym.findglob(@token.literal)
       if(id == -1)
         error(@token.line, "Unknown variable '#{@token.literal}'", @token.type)
@@ -241,10 +295,10 @@ class Parser
     while(op_prec(token_) > prec) 
       advance
       right = binexp($opOprec[token_.type])
-      comp = Types.compatibleTypes(left.type, right.type)
+      comp = Types::compatibleTypes(left.type, right.type)
       case comp
       when :INCOMPATIBLE
-        fatal("incompatible types.")
+        error(@token.line, "incompatible types.")
       when :WIDEN_LEFT
         left.type = :P_INT
       when :WIDEN_RIGHT
@@ -307,13 +361,13 @@ class Parser
     prec
   end
 
-  def error(line, message, type)
+  def error(line, message, type=nil)
     puts "Line #{line}: #{message}" + if type then ",token #{type}" else "" end
     exit(1)
   end
 
   def fatal(message)
-    puts "Parse:" + message
+    puts  message
     exit(1)
   end
 
