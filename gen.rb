@@ -8,7 +8,7 @@ class Gen
   def initialize(node, output, sym)
     @node = node
     @cg = Cg.new(output, sym)
-    puts sym.names
+    #puts sym.names
     @sym = sym
     
   end
@@ -33,7 +33,8 @@ class Gen
     when Statements
       for stmt in node.stmts
         gen(stmt)
-      end
+        @cg.freeall_registers
+      end   
     when PrintStmt
       printStmt(node)
     when VarDecl
@@ -50,6 +51,10 @@ class Gen
       funcCall(node)
     when ReturnStmt
       returnStmt(node)
+    when Addr
+      addr(node)
+    when Deref
+      deref(node)
     end
 
   end
@@ -173,5 +178,14 @@ class Gen
   def returnStmt(node)
     reg = gen(node.expr)
     @cg.cgreturn(reg, node.functionId)
+  end
+
+  def addr(node)
+    @cg.cgaddr(node.expr.id)
+  end
+
+  def deref(node)
+    reg = gen(node.expr)
+    @cg.cgderef(reg, node.expr.type)
   end
 end

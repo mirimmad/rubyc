@@ -40,21 +40,6 @@ class Cg
   def cgpreamble
     freeall_registers
     code = "\t.text\n"
-    code += ".LC0:\n"
-    code += "\t.string\t\"%d\\n\"\n"
-    code += "printint:\n"
-    code += "\tpushq\t%rbp\n"
-	  code += "\tmovq\t%rsp, %rbp\n"
-	  code += "\tsubq\t$16, %rsp\n"
-	  code += "\tmovl\t%edi, -4(%rbp)\n"
-	  code += "\tmovl\t-4(%rbp), %eax\n"
-	  code += "\tmovl\t%eax, %esi\n"
-	  code += "\tleaq	.LC0(%rip), %rdi\n"
-	  code += "\tmovl	$0, %eax\n"
-	  code += "\tcall	printf@PLT\n"
-    code += "\tnop\n"
-    code += "\tleave\n"
-    code += "\tret\n"
     @output.puts code
   end
   
@@ -129,7 +114,7 @@ class Cg
       code = "\tmovzbq\t#{identifier}(%rip), #{@reglist[r]}\n" 
     when :P_INT
       code =  "\tmovzbl\t#{identifier}(%rip), #{@reglist[r]}\n"
-    when :P_LONG
+    when :P_LONG, :P_CHARPTR, :P_INTPTR, :P_LONGPTR
       code = "\tmovq\t#{identifier}(%rip), #{@reglist[r]}\n"
     else
       fatal("bad type in cgloaglglob #{type}")
@@ -146,7 +131,7 @@ class Cg
       code = "\tmovl\t#{@dreglist[r]}, #{identifier}(%rip)\n"
     when :P_CHAR
       code = "\tmovb\t#{@breglist[r]}, #{identifier}(%rip)\n"
-    when :P_LONG
+    when :P_LONG, :P_CHARPTR, :P_INTPTR, :P_LONGPTR
       code = "\tmovq\t#{@reglist[r]}, #{identifier}(%rip)\n"
     else
       fatal("Bad type in cgstoreglob, #{type}")
@@ -220,8 +205,26 @@ class Cg
     cgjmp(@sym.names[id]["endlabel"])
   end
 
+  def cgaddr(id)
+    r = allocate_register
+    code = "\tleaq\t#{@sym.names[id]["name"]}(%rip), #{@reglist[r]}"
+    @output.puts code
+    r
+  end
+
+  def cgderef(r, type)
+    case type
+    when :P_CHARPTR
+      code = "\tmovzbq\t(#{@reglist[r]}), #{@reglist[r]}\n"
+    when :P_INTPTR, :P_LONGPTR
+      code = "\tmovq\t(#{@reglist[r]}), #{@reglist[r]}\n"
+    end
+    @output.puts code
+    r
+  end
+
   def fatal(message)
-    puts "CG: message"
+    puts "CG: #{message}"
     exit(1)
   end
 end

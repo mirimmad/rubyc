@@ -1,4 +1,4 @@
-#tokens = [:EOF, :INT(type), :PLUS, :MINUS, :STAR, :SLASH, :EQ_EQ, :EQUALS, :NE, :LT, :LE, :GT, :GE, :SEMI, :PRINT, :IDENT, :NNUMBER, :LBRACE, :RBRACE, :IF, :ELSE, :WHILE, :FOR, :VOID, :CHAR, :LONG, :RETURN]
+#tokens = [:EOF, :INT(type), :PLUS, :MINUS, :STAR, :SLASH, :EQ_EQ, :EQUALS, :NE, :LT, :LE, :GT, :GE, :SEMI, :PRINT, :IDENT, :NNUMBER, :LBRACE, :RBRACE, :IF, :ELSE, :WHILE, :FOR, :VOID, :CHAR, :LONG, :RETURN, :LOGAND, :AMPER]
 
 $keywords = {
   "print" => :PRINT,
@@ -76,6 +76,8 @@ class Scanner
       addToken(if match('=') then :GE else :GT end)
     when '<'
       addToken(if match('=') then :LE else :LT end)
+    when '&'
+      addToken(if match('&') then :LOGAND else :AMPER end)
     when " ", "\r", "\t", "\f"
     when "\n" 
       @line += 1

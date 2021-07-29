@@ -10,6 +10,7 @@ ss = Scanner.new(s)
 #end
 
 sym = GlobalSymTab.new
+sym.addglob("printint", :P_INT, :S_FUNCTION, 0)
 p = Parser.new(ss.scanTokens, sym)
 #puts
  x = p.parse

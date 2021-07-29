@@ -47,7 +47,7 @@ class Parser
     case @token.type
     when :PRINT
        printStmt
-    when :INT, :CHAR
+    when :INT, :CHAR, :VOID, :LONG
       varDecl
     when :IDENT
       assignmentStmt
@@ -86,7 +86,7 @@ class Parser
   def funcDecl
     type = parseType(@token.type)
     line = @token.line
-    advance
+    #advance
     check(:IDENT)
     name = @token.literal
     endlabel = Label::label
@@ -105,23 +105,21 @@ class Parser
   end
   
   def parseType(type)
-    case type
-    when :INT
-      :P_INT
-    when :CHAR
-      :P_CHAR
-    when :VOID
-      :P_VOID
-    when :LONG
-      :P_LONG
-    else
-      error(@token.line,"Illegal token type #{type}")
+    tt = {:VOID => :P_VOID, :CHAR => :P_CHAR, :INT => :P_INT, :LONG => :P_LONG}
+    t = if tt[type] != nil then tt[type] else error(@token.line, "Illegal type, token #{type}") end
+      
+    advance
+    if @token.type == :STAR
+      t = Types::pointerTo(t)
+      advance
     end
+    
+    t
   end
 
   def varDecl
     type = parseType(@token.type)
-    advance
+    #advance
     check(:IDENT)
     id = @sym.addglob(@token.literal, type, :S_VARIABLE)
     ident = @token.literal
@@ -258,6 +256,27 @@ class Parser
     FuncCall.new(@sym.names[id]["type"], args, id)
   end
 
+  def prefix
+    case @token.type
+    when :AMPER
+      advance
+      expr = prefix
+      if expr.class != Ident
+        error(@token.line, "& must be followed by an identifier")
+      end
+      Addr.new(Types::pointerTo(expr.type), expr)
+    when :STAR
+      advance
+      expr = prefix
+      if expr.class != Ident and expr.class != Deref
+        error(@token.line, "* must be followed by an identifier or *")
+      end
+      Deref.new(Types::valueAt(expr.type), expr)
+    else
+      primary
+    end
+  end
+
   def primary
     n = nil
     case @token.type
@@ -286,7 +305,7 @@ class Parser
 
   def binexp(prec)
 
-    left = primary()
+    left = prefix
     token_= @token
     if token_.type == :SEMI || token_.type == :RPAREN
       return left
@@ -339,7 +358,7 @@ class Parser
     if(@token.type == type)
       return true
     else
-      fatal("unexpected #{@token.literal}")
+      fatal("unexpected #{@token.type}")
     end
   end
 

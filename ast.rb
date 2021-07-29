@@ -86,6 +86,38 @@ class FuncCall < Expression
   end
 end
 
+class Addr < Expression
+  attr_accessor :type, :expr
+  def initialize(type, expr)
+    @type  = type
+    @expr = expr
+  end
+  
+  def to_s
+    "ADDR [#{@type}]: #{@expr.to_s}"
+  end
+
+  def inspect
+    to_s
+  end
+end
+
+class Deref < Expression
+  attr_accessor :type, :expr
+  def initialize(type, expr)
+    @type  = type
+    @expr = expr
+  end
+  
+  def to_s
+    "DEREF [#{@type}]: #{@expr.to_s}"
+  end
+
+  def inspect
+    to_s
+  end
+end
+
 class Statements < Statement
   # a simple set of statements
   attr_reader :stmts
