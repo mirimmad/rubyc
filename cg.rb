@@ -20,7 +20,7 @@ class Cg
         break
       end
     end
-    r
+    if r != nil then r else fatal("out of registers") end
 
   end
 

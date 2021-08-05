@@ -31,11 +31,20 @@ class Parser
     advance
     statements
   end
+  
+
 
   def statements
     list = []
     while 1
-      list.push funcDecl
+      #list.push funcDecl
+      type = parseType(@token.type)
+      check(:IDENT)
+      if peek.type == :LPAREN
+        list.push funcDecl(type)
+      else
+        list.push varDecl(type)
+      end
       if @token.type == :EOF
         break
       end
@@ -48,7 +57,8 @@ class Parser
     when :PRINT
        printStmt
     when :INT, :CHAR, :VOID, :LONG
-      varDecl
+      type = parseType(@token.type)
+      varDecl(type)
     when :IDENT
       assignmentStmt
     when :IF
@@ -83,11 +93,11 @@ class Parser
     Statements.new list
   end
 
-  def funcDecl
-    type = parseType(@token.type)
+  def funcDecl(type)
+    #type = parseType(@token.type)
     line = @token.line
     #advance
-    check(:IDENT)
+    #check(:IDENT)
     name = @token.literal
     endlabel = Label::label
     nameslot = @sym.addglob(@token.literal,type, :S_FUNCTION, endlabel)
@@ -117,15 +127,29 @@ class Parser
     t
   end
 
-  def varDecl
-    type = parseType(@token.type)
+  def varDecl(type)
+    #type = parseType(@token.type)
     #advance
-    check(:IDENT)
-    id = @sym.addglob(@token.literal, type, :S_VARIABLE)
-    ident = @token.literal
-    advance
-    match(:SEMI, ";")
-    VarDecl.new(ident, id)
+    #check(:IDENT)
+    vars = []
+    while 1
+      id = @sym.addglob(@token.literal, type, :S_VARIABLE)
+      ident = @token.literal
+      advance
+      vars.push VarDecl.new(ident, id)
+      if @token.type == :SEMI
+        match(:SEMI, ";")
+        break
+      end
+
+      if @token.type == :COMMA
+        match(:COMMA, ",")
+        check(:IDENT)
+        next
+      end
+      error(@token.line, "missing , or ; after identifier")
+    end
+    Statements.new(vars)
   end
 
   def returnStmt
