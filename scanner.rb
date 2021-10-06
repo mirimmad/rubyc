@@ -55,7 +55,13 @@ class Scanner
     when '*'
       addToken(:STAR)
     when '/'
-      addToken(:SLASH)
+      if match('/')
+        while peek != "\n"
+          advance
+        end
+      else
+        addToken(:SLASH)
+      end
     when ';'
       addToken(:SEMI)
     when ','

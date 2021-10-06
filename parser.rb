@@ -347,8 +347,17 @@ class Parser
       when :WIDEN_RIGHT
         right.type = :P_INT
       end
+      scaling = Types::scaling(left, right, token_)
+      if scaling != nil 
+        case scaling[0]
+        when :SCALE_LEFT
+          left = Scale.new(left, right.type, scaling[1])
+        when :SCALE_RIGHT
+          right = Scale.new(right, left.type, scaling[1])
+        end
+      end
       left = Binary.new(token_.type, left.type, left, right)
-
+      
       token_= @token
       if (token_.type == :SEMI || token_.type == :RPAREN)
         return left

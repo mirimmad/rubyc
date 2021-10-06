@@ -21,6 +21,7 @@ end
 
 
 class Binary < Expression
+  attr_accessor :type
   attr_reader :a_type, :type, :left, :right
   def initialize(a_type, type, left, right)
     @a_type = a_type
@@ -33,6 +34,23 @@ class Binary < Expression
     "[#{@a_type} #{@left.to_s} #{@right.to_s}]"
   end
 
+end
+
+class Scale < Expression
+  attr_reader :tree, :type, :size
+  def initialize(tree, type, size)
+    @tree = tree
+    @type = type
+    @size = size
+  end
+
+  def to_s
+    "Scale (to: #{@type}): #{@tree.to_s}"
+  end
+
+  def inspect
+    to_s
+  end
 end
 
 class Ident < Expression

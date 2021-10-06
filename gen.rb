@@ -4,9 +4,10 @@ require_relative "label.rb"
 
 
 
+
 class Gen
-  def initialize(node, output, sym)
-    @node = node
+  def initialize(tree, output, sym)
+    @tree = tree
     @cg = Cg.new(output, sym)
     #puts sym.names
     @sym = sym
@@ -16,20 +17,49 @@ class Gen
   #The kernel function
   def genCode()
     @cg.cgpreamble
-    gen(@node)
+    globalsymbols(@tree)
+    gen(@tree)
   end
 
+  #Var declarations need to be on top of the file. 
+  def globalsymbols(node)
+    case node
+    when Statements
+      for stmt in node.stmts
+        if stmt.class == FuncDecl
+          for stmt_ in stmt.body.stmts
+            if stmt_.class == Statements
+              for stmt__ in stmt_.stmts
+                if stmt__.class == VarDecl
+                  varDecl(stmt__)
+                end
+              end
+            end
+          end
+        elsif stmt.class == Statements
+          for stmt_ in stmt.stmts
+            if stmt_.class == VarDecl
+              varDecl(stmt_)
+            end
+          end
+        end
+        @cg.freeall_registers
+      end
+    end
+  end
   #The traversal function
   def gen(node, reg=-1)
     case node
     when IntLit
-      @cg.cgload(node.value.to_i)
+      @cg.cgloadint(node.value.to_i, node.type)
     when Binary
       binary(node, false, -1)
     when Ident
       Ident(node)
     when LVIdent
       LVIdent(node, reg)
+    when Scale
+      Scale(node)
     when Statements
       for stmt in node.stmts
         gen(stmt)
@@ -37,8 +67,8 @@ class Gen
       end   
     when PrintStmt
       printStmt(node)
-    when VarDecl
-      varDecl(node)
+    #when VarDecl
+      #varDecl(node)
     when AssignmentStmt
       assignmentStmt(node)
     when IfStmt
@@ -114,6 +144,21 @@ class Gen
     @cg.cgfuncpreamble(node.name)
     gen(node.body)
     @cg.cgfuncpostamble(node.nameslot)
+  end
+
+  def Scale(node)
+    reg = gen(node.tree)
+    case node.size
+    when 2
+      return @cg.cgshlconst(reg, 1)
+    when 4
+      return @cg.cgshlconst(reg, 2)
+    when 8
+      return @cg.cgshlconst(reg, 3)
+    else
+      reg_ = @cg.cgloadint(node.size, :P_INT)
+      return @cg.cgmul(reg, reg_)
+    end
   end
   def assignmentStmt(node)
     #LVIdent is the right of the node

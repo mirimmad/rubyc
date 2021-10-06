@@ -28,8 +28,40 @@ class Types
             end
             return :WIDEN_RIGHT
         end
+
+        
         
         return :COMPATIBLE
+    end
+
+    def self.scaling(left, right, token)
+            if ((Types::ptrtype(left.type) && Types::inttype(right.type)))
+                if [:PLUS, :MINUS].include? token.type
+                     return [:SCALE_RIGHT, Types::primsize(Types::valueAt(left.type))]
+                else
+                    Types::fatal("Incompatible types on line #{token.line}")
+                end
+            elsif((Types::ptrtype(right.type) && Types::inttype(left.type))) 
+                if [:PLUS, :MINUS].include? token.type
+                    return [:SCALE_LEFT, Types::primsize(Types::valueAt(right.type))]
+                else
+                    Types::fatal("Incompatible types on line #{token.line}")
+                end
+            end
+    end
+
+    def self.modifyType(tree, rtype, op)
+        ltype = tree.type
+        if(inttype(ltype) and inttype(rtype))
+            if ltype == rtype
+                return tree
+            end
+            lszie = self.primsize(ltype)
+            rsize = self.primsize(rtype)
+            if lsize > rsize
+                return :INCOMPATIBLE
+            end
+        end
     end
 
     def self.primsize(type)
@@ -49,6 +81,14 @@ class Types
     def self.valueAt(type)
         pt = {:P_VOIDPTR => :P_VOID, :P_INTPTR => :P_INT, :P_CHARPTR => :P_CHAR, :P_LONGPTR => :P_LONG}
         return (if pt[type] != nil then pt[type] else Types::fatal("unknown type in value_at") end)
+    end
+
+    def self.inttype(type)
+        type == :P_CHAR || type == :P_INT || type == :P_LONG
+    end
+
+    def self.ptrtype(type)
+        type == :P_VOIDPTR || type == :P_CHARPTR || type == :P_INTPTR || type == :P_LONGPTR
     end
 
     def self.fatal(msg)

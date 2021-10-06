@@ -20,7 +20,7 @@ class Cg
         break
       end
     end
-    if r != nil then r else fatal("out of registers") end
+    if r then r else fatal("out of registers") end
 
   end
 
@@ -60,7 +60,7 @@ class Cg
     @output.puts code
   end
 
-  def cgload(val)
+  def cgloadint(val, type)
     r = allocate_register
     code = "\tmovq\t$#{val}, #{@reglist[r]}\n"
     @output.puts code
@@ -142,9 +142,19 @@ class Cg
 
   def cgglobsym(id)
     typesize = Types::primsize(@sym.names[id]["type"])
-    code = "\t.comm\t#{@sym.names[id]["name"]}, #{typesize},#{typesize}"
+    name = @sym.names[id]["name"]
+    code = "\t.data\n\t.globl\t#{name}\n"
+    case typesize
+    when 1
+      code += "#{name}:\t.byte\t0\n"
+    when 4
+      code += "#{name}:\t.long\t0\n"
+    when 8
+      code += "#{name}:\t.quad\t0\n"
+    end
     @output.puts code
   end
+  
 
   def cgcompare_and_set(op, r1, r2)
     if not [:EQ_EQ, :NE, :LT, :LE, :GT, :GE].include? op
@@ -220,6 +230,11 @@ class Cg
       code = "\tmovq\t(#{@reglist[r]}), #{@reglist[r]}\n"
     end
     @output.puts code
+    r
+  end
+
+  def cgshlconst(r, val)
+    @output.puts "\tsalq\t$#{val}, #{@reglist[r]}\n"
     r
   end
 

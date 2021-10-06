@@ -1,5 +1,6 @@
-void main()
+int main()
 {
+  
   int i; char j;
 
   j= 20; print j;
@@ -10,4 +11,6 @@ void main()
   char x ;
   x = 255 + 1;
   print x;
+  int z;
+  return (1);
 }
